@@ -1,7 +1,6 @@
 {
   "pages": [
-    "pages/video/video",    
-    "pages/face/face",        
+    "pages/video/video",     
     "pages/index/index",                     
     "pages/logs/logs"        
   ],

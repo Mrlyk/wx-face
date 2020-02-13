@@ -1,5 +1,5 @@
 .preview-tips {
-  margin: 50rpx 0  30rpx;  
+  margin: 30rpx 0 15rpx;  
 }
 
 .video {
@@ -27,7 +27,7 @@ page {
 }
 
 .btn-area {
-  margin-top: 40rpx;
+  margin-top: 30rpx;
   box-sizing: border-box;
   width: 100%;
   padding: 0 30rpx;

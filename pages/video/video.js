@@ -5,8 +5,9 @@ Page({
     fengmian: "",
     videoSrc: "",
     // videoBase64: "",
-    who: "",   
+    who: "",
     windowWidth: 0,
+    interval: '',
     trackshow: "进行人脸检测",
     canvasshow: true,
     access_token: '',
@@ -28,26 +29,26 @@ Page({
     // 创建 系统相机的 camera 上下文 CameraContext 对象。而上下文，主要是关键字this的值
     that.ctx = wx.createCameraContext()
 
-      // 每次更新access_token
-      wx.request({
-        url: "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=02DD6ojdFcPR2we6RzudsEwI&client_secret=2GH00g1qxTonrdc57FzRnZs1GUVn8b3K&",
-        method: 'POST',
-        dataType: "json",
-        header: {
-          'content-type': 'application/json'
-        },
-        success: function (res) {
-          // console.log("access_token是" + res.data.access_token);
-          that.setData({
-            access_token: res.data.access_token
-          });
-        }
-      })
+    // 每次更新access_token
+    wx.request({
+      url: "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=TgSFOzoyxrNsgo5UvQvyzu5L&client_secret=Ijp5bHSAEq1GHpbT0wcqlu7WXGhY8PSQ",
+      method: 'POST',
+      dataType: "json",
+      header: {
+        'content-type': 'application/json'
+      },
+      success: function(res) {
+        // console.log("access_token是" + res.data.access_token);
+        that.setData({
+          access_token: res.data.access_token
+        });
+      }
+    })
 
     wx.hideLoading()
   },
 
-  onReady: function () {
+  onReady: function() {
     // 使用 wx.createContext 获取绘图上下文 context
     // var context = wx.createCanvasContext('canvas')
     // context.setStrokeStyle("#00ff00")
@@ -61,20 +62,36 @@ Page({
   //是否开启进行人脸检测
   track(e) {
     var that = this
+    that.setData({
+      src: '',
+      facelivenessResult: "",
+    })
     if (e.target.dataset.trackshow == "进行人脸检测") {
       that.setData({
         trackshow: "停止人脸检测",
         canvasshow: true
       })
       that.takePhoto()
-      that.interval = setInterval(this.takePhoto, 500)
+      that.setData({
+        interval: setInterval(this.takePhoto, 500)
+      })
     } else {
-      clearInterval(that.interval)
+      clearInterval(that.data.interval)
       that.setData({
         trackshow: "进行人脸检测",
         canvasshow: false
       })
     }
+  },
+  //清除画布
+  clearCanvas() {
+    var context = wx.createCanvasContext('canvas')
+    context.setStrokeStyle("#00ff00")
+    context.setLineWidth(2)
+    //创建一个矩形路径
+    context.rect(0, 0, 0, 0)
+    context.stroke()
+    context.draw()
   },
   //进行人脸检测
   takePhoto() {
@@ -88,7 +105,7 @@ Page({
         // 获取图片真实宽高
         wx.getImageInfo({
           src: res.tempImagePath,
-          success: function (res) {
+          success: function(res) {
             takephonewidth = res.width,
               takephoneheight = res.height
           }
@@ -112,9 +129,12 @@ Page({
               header: {
                 'content-type': 'application/x-www-form-urlencoded'
               },
-              success: function (res) {
+              success: function(res) {
                 if (res.data.error_code === 0) {
                   console.log("检测到人脸");
+                  that.setData({
+                    who: res.data.error_msg + '检测到人脸'
+                  })
                   var context = wx.createCanvasContext('canvas')
                   context.setStrokeStyle("#00ff00")
                   context.setLineWidth(2)
@@ -131,13 +151,10 @@ Page({
                 } else {
                   // console.log("未检测到人脸");  
                   //把cavans画框清除 
-                  var context = wx.createCanvasContext('canvas')
-                  context.setStrokeStyle("#00ff00")
-                  context.setLineWidth(2)
-                  //创建一个矩形路径
-                  context.rect(0, 0, 0, 0)
-                  context.stroke()
-                  context.draw()
+                  that.setData({
+                    who: res.data.error_msg + '未检测到人脸'
+                  })
+                  that.clearCanvas()
                 }
               },
             })
@@ -151,8 +168,13 @@ Page({
   search() {
     var that = this
     that.setData({
-      who: ""
+      who: "",
+      facelivenessResult: "",
+      trackshow: "进行人脸检测",
+      canvasshow: false
     })
+    clearInterval(that.data.interval)
+    that.clearCanvas()
     var takephonewidth
     var takephoneheight
     //拍摄照片
@@ -163,15 +185,15 @@ Page({
         // 获取图片真实宽高
         wx.getImageInfo({
           src: res.tempImagePath,
-          success: function (res) {
+          success: function(res) {
             takephonewidth = res.width,
               takephoneheight = res.height
           }
         })
 
         that.setData({
-          src: res.tempImagePath
-        }),
+            src: res.tempImagePath
+          }),
           wx.getFileSystemManager().readFile({
             filePath: that.data.src, //选择图片返回的相对路径
             encoding: 'base64', //编码格式
@@ -181,16 +203,19 @@ Page({
                 data: {
                   image: res.data,
                   image_type: "BASE64",
-                  group_id_list: "xcx_face_1"
+                  group_id_list: "huaao_test"
                 },
                 method: 'POST',
                 dataType: "json",
                 header: {
                   'content-type': 'application/json'
                 },
-                success: function (res) {
+                success: function(res) {
                   if (res.data.error_code === 0) {
                     console.log("识别成功");
+                    that.setData({
+                      who: res.data.error_msg + '识别成功'
+                    })
                     var context = wx.createCanvasContext('canvasresult')
                     context.setStrokeStyle("#00ff00")
                     context.setLineWidth(3)
@@ -229,6 +254,15 @@ Page({
   //开始录像
   startRecord() {
     var that = this
+    that.setData({
+      who: "",
+      src: "",
+      facelivenessResult: "",
+      trackshow: "进行人脸检测",
+      canvasshow: false
+    })
+    clearInterval(that.data.interval)
+    that.clearCanvas()
     this.ctx.startRecord({
       success: (res) => {
         console.log('startRecord')
@@ -263,42 +297,45 @@ Page({
     wx.getFileSystemManager().readFile({
       filePath: that.data.videoSrc, //选择视频返回的相对路径
       encoding: 'base64', //编码格式
-      success: res => {  
+      success: res => {
         // console.log("base64格式"+res.data)
         // that.setData({
         //   videoBase64: res.data,
         // })
         //调用百度API进行活体检测
-        that.faceliveness(res.data)   
+        that.faceliveness(res.data)
+      },
+      fail: err => {
+        console.log(err.errMsg)
       }
     })
   },
   //活体检测
-  faceliveness(base64) {    
+  faceliveness(base64) {
     var that = this
     wx.request({
-      url: "https://aip.baidubce.com/rest/2.0/face/v1/faceliveness/verify?access_token=" + that.data.access_token,  
+      url: "https://aip.baidubce.com/rest/2.0/face/v1/faceliveness/verify?access_token=" + that.data.access_token,
       data: {
-        video_base64: base64       
+        video_base64: base64
       },
       method: 'POST',
       dataType: "json",
       header: {
-        'content-type': 'application/x-www-form-urlencoded'      
+        'content-type': 'application/x-www-form-urlencoded'
       },
-      success: function (res) {
+      success: function(res) {
         // console.log("活体检测结果" +res.data);
         if (res.data.error_code === 0) {
           console.log("活体检测成功" + res.data)
-          if (res.data.result.score > res.data.result.thresholds) {
+          if (res.data.result.score > res.data.result.thresholds['frr_1e-3']) {
             var txt = "通过"
           } else {
             var txt = "未通过"
           }
           that.setData({
             faceliveness: "活体检测",
-            facelivenessResult: "活体检测分数" + res.data.result.score ,
-          })         
+            facelivenessResult: "活体检测分数" + res.data.result.score + ';' + txt,
+          })
         } else {
           that.setData({
             faceliveness: "活体检测",
